@@ -21,6 +21,9 @@ def sigmoid_prime(x):
     """производная сигмоидальной функции, работает и с числами, и с векторами (поэлементно)"""
     return sigmoid(x) * (1 - sigmoid(x))
 
+def max_prime(x):
+    return int(x > 0)
+
 def J_quadratic(neuron, X, y):
     """
     Оценивает значение квадратичной целевой функции.
@@ -202,34 +205,39 @@ class Neuron:
         
         return math.fabs(target_function_before - target_function_after) < eps
 
-inputs = np.array([[1, 0, 1, 2]])
-w21 = np.array([0, 8, 7, 8])
-w22 = np.array([0, 10, 10, 9])
-w31 = np.array([0, 10, 9])
+inputs = np.array([[1, 0, 1, 1]])
+w21 = np.array([0, 0.7, 0.2, 0.7])
+w22 = np.array([0, 0.8, 0.3, 0.6])
+w31 = np.array([0, 0.2, 0.4])
 
 w21 = np.reshape(w21, (len(w21), 1))
 w22 = np.reshape(w22, (len(w22), 1))
 w31 = np.reshape(w31, (len(w31), 1))
 
-y = np.ndarray([1])
-y = y.reshape((len(y), 1))
+y = np.array([1])
+y = np.reshape(y, (len(y), 1))
 
-n21 = Neuron(w21, activation_function=sigmoid, activation_function_derivative=sigmoid_prime)
+n21 = Neuron(w21, activation_function=max, activation_function_derivative=max_prime)
 n22 = Neuron(w22, activation_function=sigmoid, activation_function_derivative=sigmoid_prime)
 
 n31 = Neuron(w31, activation_function=sigmoid, activation_function_derivative=sigmoid_prime)
 
-r2 = np.array([[1, n21.vectorized_forward_pass(inputs)[0][0], n22.vectorized_forward_pass(inputs)[0][0]]])
+r2 = np.array([[1, n21.vectorized_forward_pass(inputs), n22.vectorized_forward_pass(inputs)[0][0]]])
 
 r3 = n31.vectorized_forward_pass(r2)[0][0]
-er3 = compute_grad_analytically(n31, r2, y) * sigmoid_prime(n31.summatory(r2))
-er3 = er3.mean(axis=0)
 
-er21 = er3.dot(w31.T) * sigmoid_prime(n21.summatory(inputs))
-er22 = er3.dot(w31.T) * sigmoid_prime(n22.summatory(inputs))
-er21 = er21.mean(axis=1)
-er22 = er22.mean(axis=1)
+er3 = (r3 - y[0][0]) * sigmoid_prime(n31.summatory(r2))
+print(er3)
+print(w31[1:])
+print(w31[1:].dot(er3))
+print(max_prime(n21.summatory(inputs)))
+print(sigmoid_prime(n22.summatory(inputs)))
 
-result1 = 2 * er22
-result2 = 2 * er21
+er21 = (w31[1:].dot(er3) * max_prime(n21.summatory(inputs))).mean(axis=0)
+er22 = w31[1:].dot(er3) * sigmoid_prime(n22.summatory(inputs))
+#er21 = er21.mean(axis=0)
+er22 = er22.mean(axis=0)
+
+result1 = inputs[0][3] * er21
+result2 = inputs[0][3] * er22
 print(result1, result2)
